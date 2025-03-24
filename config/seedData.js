@@ -112,10 +112,11 @@ async function seedData() {
         console.log('Database seeded successfully!');
     } catch (error) {
         console.error('Error seeding database:', error);
-    } finally {
-        db.close();
     }
 }
 
-// Run the seeding
-seedData();
+module.exports = {
+    insertBooks,
+    createOrders,
+    seedData
+};

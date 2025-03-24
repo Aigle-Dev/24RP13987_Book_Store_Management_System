@@ -28,10 +28,16 @@ router.get('/:id', async (req, res) => {
 // Create a new order
 router.post('/', async (req, res) => {
     try {
+        const { customer_name, items } = req.body;
+        if (!customer_name || !items || !Array.isArray(items)) {
+            return res.status(400).json({ message: 'Invalid order data' });
+        }
+        
+        const total_amount = items.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
         const order = await orderRepository.createOrder({
-            books: req.body.books,
-            customerName: req.body.customerName,
-            totalAmount: req.body.totalAmount
+            customer_name,
+            items,
+            total_amount
         });
         res.status(201).json(order);
     } catch (error) {

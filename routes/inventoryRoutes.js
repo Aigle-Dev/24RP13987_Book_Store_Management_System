@@ -48,7 +48,8 @@ router.put('/:id', async (req, res) => {
         if (result.changes === 0) {
             return res.status(404).json({ message: 'Book not found' });
         }
-        res.json({ message: 'Book updated successfully' });
+        const updatedBook = await bookRepository.getBookById(req.params.id);
+        res.json(updatedBook);
     } catch (error) {
         res.status(500).json({ message: 'Error updating book' });
     }
@@ -61,7 +62,8 @@ router.patch('/:id/quantity', async (req, res) => {
         if (result.changes === 0) {
             return res.status(404).json({ message: 'Book not found' });
         }
-        res.json({ message: 'Book quantity updated successfully' });
+        const updatedBook = await bookRepository.getBookById(req.params.id);
+        res.json(updatedBook);
     } catch (error) {
         res.status(500).json({ message: 'Error updating book quantity' });
     }
