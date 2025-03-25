@@ -1,0 +1,67 @@
+entationmapiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookstore-microservices
+  labels:
+    app: bookstore-microservices
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bookstore-microservices
+  template:
+    metadata:
+      labels:
+        app: bookstore-microservices
+    spec:
+      containers:
+      - name: orders-service
+        image: bookstore-orders:latest
+        ports:
+        - containerPort: 4001
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: SERVICE_TYPE
+          value: "orders"
+        resources:
+          limits:
+            cpu: "300m"
+            memory: "256Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+      - name: inventory-service
+        image: bookstore-inventory:latest
+        ports:
+        - containerPort: 4002
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: SERVICE_TYPE
+          value: "inventory"
+        resources:
+          limits:
+            cpu: "300m"
+            memory: "256Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookstore-microservices-service
+spec:
+  selector:
+    app: bookstore-microservices
+  ports:
+    - name: orders
+      protocol: TCP
+      port: 4001
+      targetPort: 4001
+    - name: inventory
+      protocol: TCP
+      port: 4002
+      targetPort: 4002
+  type: ClusterIP

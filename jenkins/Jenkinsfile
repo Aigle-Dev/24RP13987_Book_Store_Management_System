@@ -1,0 +1,90 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = 'your-registry'
+        BACKEND_IMAGE = '${DOCKER_REGISTRY}/bookstore-backend'
+        ORDERS_IMAGE = '${DOCKER_REGISTRY}/bookstore-orders'
+        INVENTORY_IMAGE = '${DOCKER_REGISTRY}/bookstore-inventory'
+        KUBE_CONFIG = credentials('kubernetes-config')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh 'npm run test'
+            }
+        }
+
+        stage('Build Docker Images') {
+            parallel {
+                stage('Build Backend') {
+                    steps {
+                        script {
+                            docker.build("${BACKEND_IMAGE}:${BUILD_NUMBER}", '-f Dockerfile .')
+                        }
+                    }
+                }
+                stage('Build Orders Service') {
+                    steps {
+                        script {
+                            docker.build("${ORDERS_IMAGE}:${BUILD_NUMBER}", '-f services/orders/Dockerfile .')
+                        }
+                    }
+                }
+                stage('Build Inventory Service') {
+                    steps {
+                        script {
+                            docker.build("${INVENTORY_IMAGE}:${BUILD_NUMBER}", '-f services/inventory/Dockerfile .')
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Images') {
+            steps {
+                script {
+                    docker.withRegistry(DOCKER_REGISTRY) {
+                        docker.image("${BACKEND_IMAGE}:${BUILD_NUMBER}").push()
+                        docker.image("${ORDERS_IMAGE}:${BUILD_NUMBER}").push()
+                        docker.image("${INVENTORY_IMAGE}:${BUILD_NUMBER}").push()
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    sh """
+                        kubectl --kubeconfig=${KUBE_CONFIG} apply -f k8s/backend-deployment.yaml
+                        kubectl --kubeconfig=${KUBE_CONFIG} apply -f k8s/microservice-deployment.yaml
+                        kubectl --kubeconfig=${KUBE_CONFIG} apply -f k8s/nginx-ingress.yaml
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookstore-backend
+  labels:
+    app: bookstore-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bookstore-backend
+  template:
+    metadata:
+      labels:
+        app: bookstore-backend
+    spec:
+      containers:
+      - name: bookstore-backend
+        image: bookstore-backend:latest
+        ports:
+        - containerPort: 4000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookstore-backend-service
+spec:
+  selector:
+    app: bookstore-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 4000
+  type: ClusterIP

@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bookstore-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /api/orders
+        pathType: Prefix
+        backend:
+          service:
+            name: bookstore-microservices-service
+            port:
+              number: 4001
+      - path: /api/inventory
+        pathType: Prefix
+        backend:
+          service:
+            name: bookstore-microservices-service
+            port:
+              number: 4002
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: bookstore-backend-service
+            port:
+              number: 80
